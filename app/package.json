@@ -1,0 +1,17 @@
+{
+  "name": "sample-devops-app",
+  "version": "1.0.0",
+  "description": "Sample Node.js app for CI/CD pipeline assignment",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
