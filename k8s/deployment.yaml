@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: sample-app
-          image: yourdockerhubuser/sample-devops-app:latest
+          image: DOCKER_USER/devops-cicd-assignment:IMAGE_TAG
           ports:
             - containerPort: 3000
           env:

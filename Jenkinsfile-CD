@@ -1,0 +1,107 @@
+pipeline {
+
+    agent any
+
+    parameters {
+
+        string(
+            name: 'IMAGE_TAG',
+            defaultValue: '',
+            description: 'Docker Image Tag'
+        )
+
+    }
+
+    stages {
+
+        stage('Checkout') {
+
+            steps {
+
+                checkout scm
+
+            }
+
+        }
+
+        stage('Update Deployment') {
+
+            steps {
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+
+                    sh """
+
+                    sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/deployment.yaml
+
+                    sed -i "s|DOCKER_USER|${DOCKER_USER}|g" k8s/deployment.yaml
+
+                    """
+
+                }
+
+            }
+
+        }
+
+        stage('Deploy') {
+
+            steps {
+
+                withCredentials([
+                    file(
+                        credentialsId: 'kubeconfig',
+                        variable: 'KUBECONFIG'
+                    )
+                ]) {
+
+                    sh '''
+
+                    kubectl apply -f k8s/deployment.yaml
+
+                    kubectl apply -f k8s/service.yaml
+
+                    '''
+
+                }
+
+            }
+
+        }
+
+        stage('Verify Deployment') {
+
+            steps {
+
+                withCredentials([
+                    file(
+                        credentialsId: 'kubeconfig',
+                        variable: 'KUBECONFIG'
+                    )
+                ]) {
+
+                    sh '''
+
+                    kubectl rollout status deployment/sample-app-deployment
+
+                    kubectl get pods
+
+                    kubectl get svc
+
+                    '''
+
+                }
+
+            }
+
+        }
+
+    }
+
+}
