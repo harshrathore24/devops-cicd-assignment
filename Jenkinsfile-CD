@@ -24,7 +24,7 @@ pipeline {
 
         }
 
-        stage('Update Deployment') {
+        stage('Deploy to Kubernetes') {
 
             steps {
 
@@ -33,60 +33,24 @@ pipeline {
                         credentialsId: 'dockerhub-credentials',
                         usernameVariable: 'DOCKER_USER',
                         passwordVariable: 'DOCKER_PASS'
+                    ),
+
+                    file(
+                        credentialsId: 'kubeconfig',
+                        variable: 'KUBECONFIG'
                     )
+
                 ]) {
 
                     sh """
 
-                    sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/deployment.yaml
-
                     sed -i "s|DOCKER_USER|${DOCKER_USER}|g" k8s/deployment.yaml
 
-                    """
-
-                }
-
-            }
-
-        }
-
-        stage('Deploy') {
-
-            steps {
-
-                withCredentials([
-                    file(
-                        credentialsId: 'kubeconfig',
-                        variable: 'KUBECONFIG'
-                    )
-                ]) {
-
-                    sh '''
+                    sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/deployment.yaml
 
                     kubectl apply -f k8s/deployment.yaml
 
                     kubectl apply -f k8s/service.yaml
-
-                    '''
-
-                }
-
-            }
-
-        }
-
-        stage('Verify Deployment') {
-
-            steps {
-
-                withCredentials([
-                    file(
-                        credentialsId: 'kubeconfig',
-                        variable: 'KUBECONFIG'
-                    )
-                ]) {
-
-                    sh '''
 
                     kubectl rollout status deployment/sample-app-deployment
 
@@ -94,7 +58,7 @@ pipeline {
 
                     kubectl get svc
 
-                    '''
+                    """
 
                 }
 

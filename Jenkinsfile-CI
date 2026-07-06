@@ -4,7 +4,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "devops-cicd-assignment"
-        IMAGE_TAG  = "${BUILD_NUMBER}"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -12,22 +12,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-            }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                dir('app') {
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                dir('app') {
-                    sh 'npm test'
-                }
             }
         }
 
@@ -44,9 +28,7 @@ pipeline {
                 ]) {
 
                     sh '''
-                    echo "$DOCKER_PASS" | docker login \
-                    -u "$DOCKER_USER" \
-                    --password-stdin
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
 
                 }
@@ -55,7 +37,7 @@ pipeline {
 
         }
 
-        stage('Build Image') {
+        stage('Build Docker Image') {
 
             steps {
 
@@ -63,11 +45,25 @@ pipeline {
 
                     sh '''
                     docker build \
-                    -t $DOCKER_USER/devops-cicd-assignment:'"$BUILD_NUMBER"' \
+                    -t $DOCKER_USER/devops-cicd-assignment:$BUILD_NUMBER \
                     -t $DOCKER_USER/devops-cicd-assignment:latest .
                     '''
 
                 }
+
+            }
+
+        }
+
+        stage('Run Tests') {
+
+            steps {
+
+                sh '''
+                docker run --rm \
+                $DOCKER_USER/devops-cicd-assignment:$BUILD_NUMBER \
+                npm test
+                '''
 
             }
 
@@ -78,7 +74,7 @@ pipeline {
             steps {
 
                 sh '''
-                docker push $DOCKER_USER/devops-cicd-assignment:'"$BUILD_NUMBER"'
+                docker push $DOCKER_USER/devops-cicd-assignment:$BUILD_NUMBER
 
                 docker push $DOCKER_USER/devops-cicd-assignment:latest
                 '''
@@ -87,7 +83,7 @@ pipeline {
 
         }
 
-        stage('Trigger CD Pipeline') {
+        stage('Trigger CD') {
 
             steps {
 
