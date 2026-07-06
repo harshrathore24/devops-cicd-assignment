@@ -1,8 +1,9 @@
 const express = require('express');
+const os = require('os');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Simple in-memory health/metrics state
 let requestCount = 0;
 
 app.use((req, res, next) => {
@@ -13,23 +14,19 @@ app.use((req, res, next) => {
 app.get('/', (req, res) => {
   res.status(200).json({
     message: 'Hello from Sample DevOps App!',
-    hostname: require('os').hostname(),
+    hostname: os.hostname(),
     timestamp: new Date().toISOString(),
   });
 });
 
-// Health check endpoint - used by Docker/K8s probes
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP' });
 });
 
-// Readiness endpoint
 app.get('/ready', (req, res) => {
   res.status(200).json({ status: 'READY' });
 });
 
-// Basic metrics endpoint (Prometheus can scrape a proper /metrics with prom-client,
-// this is a simplified version for demo purposes)
 app.get('/metrics', (req, res) => {
   res.set('Content-Type', 'text/plain');
   res.send(
@@ -39,8 +36,11 @@ app.get('/metrics', (req, res) => {
   );
 });
 
-app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}`);
-});
+// Start server only when running directly
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`App listening on port ${PORT}`);
+  });
+}
 
 module.exports = app;
