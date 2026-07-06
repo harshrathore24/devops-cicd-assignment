@@ -3,17 +3,12 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "devops-cicd-assignment"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        DOCKER_USER = "harshrathore24"        // <-- apna Docker Hub username
+        IMAGE_NAME  = "devops-cicd-assignment"
+        IMAGE_TAG   = "${BUILD_NUMBER}"
     }
 
     stages {
-
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
 
         stage('Docker Login') {
 
@@ -22,13 +17,13 @@ pipeline {
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
+                        usernameVariable: 'USER',
+                        passwordVariable: 'PASS'
                     )
                 ]) {
 
                     sh '''
-                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    echo "$PASS" | docker login -u "$USER" --password-stdin
                     '''
 
                 }
@@ -37,17 +32,17 @@ pipeline {
 
         }
 
-        stage('Build Docker Image') {
+        stage('Build Image') {
 
             steps {
 
                 dir('app') {
 
-                    sh '''
+                    sh """
                     docker build \
-                    -t $DOCKER_USER/devops-cicd-assignment:$BUILD_NUMBER \
-                    -t $DOCKER_USER/devops-cicd-assignment:latest .
-                    '''
+                    -t ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} \
+                    -t ${DOCKER_USER}/${IMAGE_NAME}:latest .
+                    """
 
                 }
 
@@ -59,11 +54,11 @@ pipeline {
 
             steps {
 
-                sh '''
+                sh """
                 docker run --rm \
-                $DOCKER_USER/devops-cicd-assignment:$BUILD_NUMBER \
+                ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} \
                 npm test
-                '''
+                """
 
             }
 
@@ -73,11 +68,11 @@ pipeline {
 
             steps {
 
-                sh '''
-                docker push $DOCKER_USER/devops-cicd-assignment:$BUILD_NUMBER
+                sh """
+                docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}
 
-                docker push $DOCKER_USER/devops-cicd-assignment:latest
-                '''
+                docker push ${DOCKER_USER}/${IMAGE_NAME}:latest
+                """
 
             }
 
@@ -88,14 +83,8 @@ pipeline {
             steps {
 
                 build job: 'CD-Pipeline',
-
                 parameters: [
-
-                    string(
-                        name: 'IMAGE_TAG',
-                        value: BUILD_NUMBER
-                    )
-
+                    string(name: 'IMAGE_TAG', value: IMAGE_TAG)
                 ]
 
             }
