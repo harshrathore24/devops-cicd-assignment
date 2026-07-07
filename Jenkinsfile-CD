@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_USER = "harshrathore24"
+        IMAGE = "harshrathore24/devops-cicd-assignment"
     }
 
     stages {
@@ -19,19 +19,15 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-
                 sh """
+                sed -i 's|IMAGE_PLACEHOLDER|${IMAGE}:${IMAGE_TAG}|g' k8s/deployment.yaml
+
                 kubectl apply -f k8s/deployment.yaml
                 kubectl apply -f k8s/service.yaml
 
-                kubectl set image deployment/devops-app \
-                devops-app=${DOCKER_USER}/devops-cicd-assignment:${IMAGE_TAG}
-
-                kubectl rollout status deployment/devops-app
+                kubectl rollout status deployment/sample-app-deployment
                 """
-
             }
         }
-
     }
 }
