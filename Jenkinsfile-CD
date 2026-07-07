@@ -1,71 +1,37 @@
 pipeline {
-
     agent any
 
     parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest')
+    }
 
-        string(
-            name: 'IMAGE_TAG',
-            defaultValue: '',
-            description: 'Docker Image Tag'
-        )
-
+    environment {
+        DOCKER_USER = "harshrathore24"
     }
 
     stages {
 
         stage('Checkout') {
-
             steps {
-
                 checkout scm
-
             }
-
         }
 
         stage('Deploy to Kubernetes') {
-
             steps {
 
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    ),
+                sh """
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
 
-                    file(
-                        credentialsId: 'kubeconfig',
-                        variable: 'KUBECONFIG'
-                    )
+                kubectl set image deployment/devops-app \
+                devops-app=${DOCKER_USER}/devops-cicd-assignment:${IMAGE_TAG}
 
-                ]) {
-
-                    sh """
-
-                    sed -i "s|DOCKER_USER|${DOCKER_USER}|g" k8s/deployment.yaml
-
-                    sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/deployment.yaml
-
-                    kubectl apply -f k8s/deployment.yaml
-
-                    kubectl apply -f k8s/service.yaml
-
-                    kubectl rollout status deployment/sample-app-deployment
-
-                    kubectl get pods
-
-                    kubectl get svc
-
-                    """
-
-                }
+                kubectl rollout status deployment/devops-app
+                """
 
             }
-
         }
 
     }
-
 }
